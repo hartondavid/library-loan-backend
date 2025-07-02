@@ -17,6 +17,9 @@ exports.up = function (knex) {
 
         table.enum('status', ['available', 'unavailable']).nullable();
 
+        table.string('publisher').notNullable();
+        table.integer('number_of_pages').notNullable();
+
         table.integer('librarian_id').unsigned().notNullable()
             .references('id').inTable('users').onDelete('CASCADE');
 

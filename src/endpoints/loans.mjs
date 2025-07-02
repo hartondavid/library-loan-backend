@@ -11,16 +11,16 @@ function toMySQLDatetime(dateString) {
     return date.toISOString().slice(0, 19).replace('T', ' ');
 }
 
-// Adaugă o rezervare nouă (doar admin)
+// Adaugă o rezervare nouă 
 router.post('/addLoan', userAuthMiddleware, async (req, res) => {
 
     try {
 
-        const { book_id, start_date, end_date, quantity } = req.body;
+        const { book_id, start_date, quantity } = req.body;
         const userId = req.user?.id;
 
-        if (!book_id || !start_date || !end_date || !quantity) {
-            return sendJsonResponse(res, false, 400, "Câmpurile book_id, start_date, end_date și quantity sunt obligatorii!", []);
+        if (!book_id || !start_date || !quantity) {
+            return sendJsonResponse(res, false, 400, "Câmpurile book_id, start_date și quantity sunt obligatorii!", []);
         }
 
 
@@ -34,19 +34,30 @@ router.post('/addLoan', userAuthMiddleware, async (req, res) => {
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
         const dateStartMySQL = toMySQLDatetime(start_date);
-        const dateEndMySQL = toMySQLDatetime(end_date);
+        // Calculează end_date cu 7 zile înainte de start_date
+        const startDateObj = new Date(start_date);
+        const endDateObj = new Date(startDateObj);
+        endDateObj.setDate(startDateObj.getDate() + 7);
+        const dateEndMySQL = toMySQLDatetime(endDateObj.toISOString());
 
         const books = await db('books')
             .where({ 'books.id': book_id })
             .where('books.quantity', '>', 0)
             .first();
 
-
         if (!books) {
             return sendJsonResponse(res, false, 404, "Nu există carti!", []);
         }
 
         const remainingQuantity = books.quantity - quantity;
+
+        if (remainingQuantity < 0) {
+            return sendJsonResponse(res, false, 400, "Nu există suficiente carti!", []);
+        }
+
+        if (quantity > 5) {
+            return sendJsonResponse(res, false, 400, "Nu poti imprumuta mai mult de 5 carti!", []);
+        }
 
         console.log('remainingQuantity', remainingQuantity);
         await db('books')
@@ -145,6 +156,7 @@ router.get('/getLoans', userAuthMiddleware, async (req, res) => {
         const userRights = await db('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 1)
+            .orWhere('rights.right_code', 3)
             .where('user_rights.user_id', userId)
             .first();
 
@@ -155,6 +167,7 @@ router.get('/getLoans', userAuthMiddleware, async (req, res) => {
         const loans = await db('loans')
             .join('books', 'loans.book_id', 'books.id')
             .join('users', 'loans.student_id', 'users.id')
+            .whereNot('loans.status', 'returned')
             .select(
                 'loans.id',
                 'books.title',
@@ -197,6 +210,7 @@ router.get('/getLoansByStudentId', userAuthMiddleware, async (req, res) => {
             .join('books', 'loans.book_id', 'books.id')
             .join('users', 'loans.student_id', 'users.id')
             .where('loans.student_id', userId)
+            .whereNot('loans.status', 'returned')
             .select(
                 'loans.id',
                 'books.title',
@@ -230,6 +244,7 @@ router.get('/getPastLoans', userAuthMiddleware, async (req, res) => {
         const userRights = await db('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 1)
+            .orWhere('rights.right_code', 3)
             .where('user_rights.user_id', userId)
             .first();
 

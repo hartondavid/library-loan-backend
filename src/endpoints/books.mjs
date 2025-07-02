@@ -8,16 +8,15 @@ const upload = createMulter('public/uploads/books', ['image/jpeg', 'image/png', 
 
 const router = Router();
 
-// Adaugă o cartea nouă (doar admin)
+// Adaugă o cartea nouă 
 router.post('/addBook', userAuthMiddleware, upload.fields([{ name: 'photo' }]), async (req, res) => {
 
     try {
-
-        const { title, author, description, language, quantity } = req.body;
+        const { title, author, description, language, quantity, publisher, number_of_pages } = req.body;
         const userId = req.user?.id;
 
-        if (!title || !author || !description || !language || !quantity) {
-            return sendJsonResponse(res, false, 400, "Câmpurile title, author, description, language și quantity sunt obligatorii!", []);
+        if (!title || !author || !description || !language || !quantity || !publisher || !number_of_pages) {
+            return sendJsonResponse(res, false, 400, "Câmpurile title, author, description, language, quantity, publisher și number_of_pages sunt obligatorii!", []);
         }
 
         if (!req.files || !req.files['photo']) {
@@ -38,10 +37,8 @@ router.post('/addBook', userAuthMiddleware, upload.fields([{ name: 'photo' }]), 
         }
 
         const [id] = await db('books').insert({
-            title, author, description, language, photo: filePathForImagePath, librarian_id: userId, quantity
+            title, author, description, language, photo: filePathForImagePath, librarian_id: userId, quantity, publisher, number_of_pages
         });
-
-
 
         const book = await db('books').where({ id }).first();
         return sendJsonResponse(res, true, 201, "Book a fost adăugată cu succes!", { book });
@@ -56,10 +53,10 @@ router.put('/updateBook/:bookId', userAuthMiddleware, upload.fields([{ name: 'ph
     try {
 
         const { bookId } = req.params;
-        const { title, author, description, language, quantity } = req.body;
+        const { title, author, description, language, quantity, publisher, number_of_pages } = req.body;
 
-        if (!title || !author || !description || !language || !quantity) {
-            return sendJsonResponse(res, false, 400, "Câmpurile title, author, description, language și quantity sunt obligatorii!", []);
+        if (!title || !author || !description || !language || !quantity || !publisher || !number_of_pages) {
+            return sendJsonResponse(res, false, 400, "Câmpurile title, author, description, language, quantity, publisher și number_of_pages sunt obligatorii!", []);
         }
 
         const book = await db('books').where({ id: bookId }).first();
@@ -72,6 +69,8 @@ router.put('/updateBook/:bookId', userAuthMiddleware, upload.fields([{ name: 'ph
             description: description || book.description,
             language: language || book.language,
             quantity: quantity || book.quantity,
+            publisher: publisher || book.publisher,
+            number_of_pages: number_of_pages || book.number_of_pages,
         }
 
         if (req.files && req.files['photo'] && req.files['photo'][0]) {
@@ -81,8 +80,6 @@ router.put('/updateBook/:bookId', userAuthMiddleware, upload.fields([{ name: 'ph
         }
 
         const updated = await db('books').where({ id: bookId }).update(updateData);
-
-
 
         if (!updated) return sendJsonResponse(res, false, 404, "Cartea nu a fost actualizată!", []);
 
@@ -98,9 +95,6 @@ router.delete('/deleteBook/:bookId', userAuthMiddleware, async (req, res) => {
     try {
 
         const { bookId } = req.params;
-
-
-
 
         const book = await db('books').where({ id: bookId }).first();
         const loans = await db('loans').where({ book_id: bookId });
@@ -134,6 +128,8 @@ router.get('/getBook/:bookId', userAuthMiddleware, async (req, res) => {
                 'books.librarian_id',
                 'books.created_at',
                 'books.updated_at',
+                'books.publisher',
+                'books.number_of_pages',
             )
             .first();
         if (!book) {
@@ -161,6 +157,8 @@ router.get('/getBooks', userAuthMiddleware, async (req, res) => {
                 'books.librarian_id',
                 'books.created_at',
                 'books.updated_at',
+                'books.publisher',
+                'books.number_of_pages',
             )
 
         console.log('books', books);
@@ -190,6 +188,8 @@ router.get('/getBooks', userAuthMiddleware, async (req, res) => {
                 'books.status',
                 'books.quantity',
                 'books.created_at',
+                'books.publisher',
+                'books.number_of_pages',
             )
         if (books.length === 0) {
             return sendJsonResponse(res, false, 404, 'Nu există carti!', []);
