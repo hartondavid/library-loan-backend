@@ -1,0 +1,22 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "index.mjs",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "migrations/**",
+                    "seeds/**",
+                    "knexfile.cjs"
+                ]
+            }
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.mjs"
+        }
+    ]
+}
