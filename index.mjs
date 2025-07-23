@@ -26,6 +26,16 @@ app.use(cors({
     exposedHeaders: ['X-Auth-Token']
 }));
 
+// Handle preflight requests explicitly
+app.options('*', (req, res) => {
+    console.log('🔍 Preflight request for:', req.originalUrl);
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Expose-Headers', 'X-Auth-Token');
+    res.status(200).end();
+});
+
 // Run migrations before starting the server
 const runMigrations = async () => {
     try {
@@ -461,9 +471,31 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('❌ Global error:', err.message);
+    console.error('🔍 Error stack:', err.stack);
+
+    // Ensure CORS headers are set even on errors
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    res.status(500).json({
+        error: 'Internal server error',
+        message: err.message
+    });
+});
+
 // 404 handler for undefined routes
 app.use('*', (req, res) => {
     console.log('404 route accessed:', req.originalUrl);
+
+    // Set CORS headers for 404 responses
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
     res.status(404).json({
         error: 'Route not found',
         message: `Cannot ${req.method} ${req.originalUrl}`,
