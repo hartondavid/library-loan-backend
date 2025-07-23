@@ -25,6 +25,29 @@ app.use(cors({
     exposedHeaders: ['X-Auth-Token']
 }));
 
+// Handle preflight requests explicitly - THIS IS CRITICAL FOR CORS
+app.options('*', (req, res) => {
+    console.log('🔍 Preflight request for:', req.originalUrl);
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Expose-Headers', 'X-Auth-Token');
+    res.status(200).end();
+});
+
+// Logging middleware for debugging
+app.use((req, res, next) => {
+    console.log(`🌐 ${req.method} ${req.originalUrl} - Origin: ${req.headers.origin}`);
+
+    // Add CORS headers to all responses
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Expose-Headers', 'X-Auth-Token');
+
+    next();
+});
+
 // Run migrations before starting the server
 const runMigrations = async () => {
     try {
@@ -160,7 +183,21 @@ app.get('/test', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'production',
         port: process.env.PORT || 8080,
-        database: apiRoutes ? 'connected' : 'not connected (simplified version)'
+        database: apiRoutes ? 'connected' : 'not connected (simplified version)',
+        cors: {
+            origin: req.headers.origin,
+            allowed: true
+        }
+    });
+});
+
+// CORS test route
+app.get('/cors-test', (req, res) => {
+    console.log('CORS test route accessed from:', req.headers.origin);
+    res.json({
+        message: 'CORS test successful!',
+        origin: req.headers.origin,
+        timestamp: new Date().toISOString()
     });
 });
 

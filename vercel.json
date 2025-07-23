@@ -25,7 +25,7 @@
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
-                    "value": "https://libraryloan.davidharton.online"
+                    "value": "*"
                 },
                 {
                     "key": "Access-Control-Allow-Methods",
@@ -38,10 +38,6 @@
                 {
                     "key": "Access-Control-Expose-Headers",
                     "value": "X-Auth-Token, X-Total-Count"
-                },
-                {
-                    "key": "Access-Control-Allow-Credentials",
-                    "value": "true"
                 },
                 {
                     "key": "Access-Control-Max-Age",
