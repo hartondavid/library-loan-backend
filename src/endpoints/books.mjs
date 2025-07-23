@@ -2,7 +2,7 @@ import { Router } from "express";
 import db from "../utils/database.mjs";
 import { sendJsonResponse } from "../utils/utilFunctions.mjs";
 import { userAuthMiddleware } from "../utils/middlewares/userAuthMiddleware.mjs";
-import createMulter from "../utils/uploadUtils.mjs";
+import createMulter, { smartUpload } from "../utils/uploadUtils.mjs";
 
 const upload = createMulter('public/uploads/books', ['image/jpeg', 'image/png', 'image/gif', 'application/pdf']);
 
@@ -157,35 +157,6 @@ router.get('/getBook/:bookId', userAuthMiddleware, async (req, res) => {
     }
 });
 
-router.get('/getBooks', userAuthMiddleware, async (req, res) => {
-    try {
-
-        const books = await db('books')
-            .select(
-                'books.id',
-                'books.title',
-                'books.author',
-                'books.description',
-                'books.language',
-                'books.photo',
-                'books.status',
-                'books.quantity',
-                'books.librarian_id',
-                'books.created_at',
-                'books.updated_at',
-                'books.publisher',
-                'books.number_of_pages',
-            )
-
-        console.log('books', books);
-        if (books.length === 0) {
-            return sendJsonResponse(res, false, 404, 'Nu există carti!', []);
-        }
-        return sendJsonResponse(res, true, 200, 'Cartile au fost găsite!', books);
-    } catch (error) {
-        return sendJsonResponse(res, false, 500, 'Eroare la preluarea cartilor!', { details: error.message });
-    }
-});
 
 router.get('/getBooks', userAuthMiddleware, async (req, res) => {
     try {
