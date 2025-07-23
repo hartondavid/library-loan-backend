@@ -1,7 +1,7 @@
 // middleware.js - CORS configuration for production deployment
 
 const allowedOrigins = [
-    'https://library-loan-frontend.vercel.app', // Current frontend URL
+    'https://libraryloan.davidharton.online', // Current frontend URL
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173', // Vite default
@@ -16,7 +16,7 @@ const isOriginAllowed = (origin) => {
     }
 
     // Allow main frontend domain and all its subdomains
-    if (origin.startsWith('https://library-loan-frontend.vercel.app')) {
+    if (origin.startsWith('https://libraryloan.davidharton.online')) {
         return true;
     }
 
