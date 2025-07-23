@@ -17,23 +17,13 @@ try {
 // Basic middleware
 app.use(express.json());
 
-// Handle preflight requests
-app.options('*', cors());
 
 // Add CORS for frontend access
 app.use(cors({
-    origin: [
-        'https://libraryloan.davidharton.online',
-        'http://localhost:3000',
-        'http://localhost:5173',
-        'http://localhost:8080'
-    ],
-    credentials: true,
+    origin: '*', // In production, specify your frontend domain
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    exposedHeaders: ['X-Auth-Token'],
-    preflightContinue: false,
-    optionsSuccessStatus: 200
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['X-Auth-Token']
 }));
 
 // Run migrations before starting the server
