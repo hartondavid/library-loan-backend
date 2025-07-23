@@ -23,8 +23,16 @@ router.post('/addBook', userAuthMiddleware, upload.fields([{ name: 'photo' }]), 
             return sendJsonResponse(res, false, 400, "Image is required", null);
         }
 
-        let filePathForImagePath = req.files['photo'][0].path; // Get the full file path
-        filePathForImagePath = filePathForImagePath.replace(/^public[\\/]/, '');
+        // Use smartUpload to handle both local and serverless environments
+        let filePathForImagePath;
+        try {
+            filePathForImagePath = await smartUpload(req.files['photo'][0], 'books');
+            console.log('📁 File uploaded successfully:', filePathForImagePath);
+        } catch (uploadError) {
+            console.error('❌ File upload failed:', uploadError);
+            return sendJsonResponse(res, false, 500, "File upload failed", { details: uploadError.message });
+        }
+
 
         const userRights = await db('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
@@ -73,10 +81,12 @@ router.put('/updateBook/:bookId', userAuthMiddleware, upload.fields([{ name: 'ph
             number_of_pages: number_of_pages || book.number_of_pages,
         }
 
+
         if (req.files && req.files['photo'] && req.files['photo'][0]) {
-            let filePathForImagePath = req.files['photo'][0].path;
-            filePathForImagePath = filePathForImagePath.replace(/^public[\\/]/, '');
-            updateData.photo = filePathForImagePath;
+            // Use smart upload function that automatically chooses storage method
+            const photoUrl = await smartUpload(req.files['photo'][0], 'books');
+            console.log('🔍 updateBook - Photo URL determined:', photoUrl);
+            updateData.photo = photoUrl;
         }
 
         const updated = await db('books').where({ id: bookId }).update(updateData);
@@ -101,6 +111,12 @@ router.delete('/deleteBook/:bookId', userAuthMiddleware, async (req, res) => {
 
         if (!book) return sendJsonResponse(res, false, 404, "Cartea nu există!", []);
         if (loans.length > 0) return sendJsonResponse(res, false, 400, "Cartea are împrumuturi!", []);
+
+        // Delete the image from Vercel Blob if it's a Blob URL
+        if (book.photo) {
+            console.log('🔍 deleteBook - Deleting image:', book.photo);
+            await deleteFromBlob(book.photo);
+        }
 
         await db('books').where({ id: bookId }).del();
 
