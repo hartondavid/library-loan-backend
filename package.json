@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node index.mjs",
-    "dev": "nodemon index.mjs"
+    "dev": "nodemon index.mjs",
+    "build": "echo 'Backend build completed - no compilation needed'",
+    "migrate": "knex migrate:latest --knexfile knexfile.cjs",
+    "seed": "knex seed:run --knexfile knexfile.cjs",
+    "deploy": "npm start"
   },
   "repository": {
     "type": "git",
@@ -27,6 +31,8 @@
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
     "nodemon": "^3.1.10",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "pg-types": "^4.0.1",
+    "serverless-http": "^3.2.0"
   }
 }
