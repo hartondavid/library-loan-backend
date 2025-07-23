@@ -14,39 +14,38 @@ try {
     console.log('No .env file found, using environment variables');
 }
 
-// Basic middleware
-app.use(express.json());
-
-// Add CORS for frontend access
-app.use(cors({
-    origin: '*', // In production, specify your frontend domain
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['X-Auth-Token']
-}));
-
-// Handle preflight requests explicitly - THIS IS CRITICAL FOR CORS
-app.options('*', (req, res) => {
-    console.log('🔍 Preflight request for:', req.originalUrl);
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Expose-Headers', 'X-Auth-Token');
-    res.status(200).end();
-});
-
-// Logging middleware for debugging
+// CORS middleware - MUST BE FIRST
 app.use((req, res, next) => {
     console.log(`🌐 ${req.method} ${req.originalUrl} - Origin: ${req.headers.origin}`);
 
-    // Add CORS headers to all responses
+    // Add CORS headers to ALL responses
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
     res.header('Access-Control-Expose-Headers', 'X-Auth-Token');
+    res.header('Access-Control-Max-Age', '86400');
+
+    // Handle preflight requests immediately
+    if (req.method === 'OPTIONS') {
+        console.log('🔍 Preflight request handled for:', req.originalUrl);
+        return res.status(200).end();
+    }
 
     next();
 });
+
+// Basic middleware
+app.use(express.json());
+
+// Add CORS for frontend access (backup)
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['X-Auth-Token'],
+    preflightContinue: false,
+    optionsSuccessStatus: 200
+}));
 
 // Run migrations before starting the server
 const runMigrations = async () => {
@@ -197,8 +196,19 @@ app.get('/cors-test', (req, res) => {
     res.json({
         message: 'CORS test successful!',
         origin: req.headers.origin,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        headers: {
+            'Access-Control-Allow-Origin': res.getHeader('Access-Control-Allow-Origin'),
+            'Access-Control-Allow-Methods': res.getHeader('Access-Control-Allow-Methods'),
+            'Access-Control-Allow-Headers': res.getHeader('Access-Control-Allow-Headers')
+        }
     });
+});
+
+// OPTIONS test route
+app.options('/cors-test', (req, res) => {
+    console.log('OPTIONS test route accessed from:', req.headers.origin);
+    res.status(200).end();
 });
 
 // Root route
