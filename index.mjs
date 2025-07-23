@@ -17,7 +17,6 @@ try {
 // Basic middleware
 app.use(express.json());
 
-
 // Add CORS for frontend access
 app.use(cors({
     origin: '*', // In production, specify your frontend domain
@@ -25,16 +24,6 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['X-Auth-Token']
 }));
-
-// Handle preflight requests explicitly
-app.options('*', (req, res) => {
-    console.log('🔍 Preflight request for:', req.originalUrl);
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Expose-Headers', 'X-Auth-Token');
-    res.status(200).end();
-});
 
 // Run migrations before starting the server
 const runMigrations = async () => {
@@ -171,21 +160,7 @@ app.get('/test', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'production',
         port: process.env.PORT || 8080,
-        database: apiRoutes ? 'connected' : 'not connected (simplified version)',
-        cors: {
-            origin: req.headers.origin,
-            allowed: true
-        }
-    });
-});
-
-// CORS test route
-app.get('/cors-test', (req, res) => {
-    console.log('CORS test route accessed from:', req.headers.origin);
-    res.json({
-        message: 'CORS test successful!',
-        origin: req.headers.origin,
-        timestamp: new Date().toISOString()
+        database: apiRoutes ? 'connected' : 'not connected (simplified version)'
     });
 });
 
@@ -458,44 +433,9 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// CORS error handler
-app.use((err, req, res, next) => {
-    if (err.message === 'CORS') {
-        console.log('❌ CORS error:', req.originalUrl);
-        return res.status(403).json({
-            error: 'CORS error',
-            message: 'Origin not allowed',
-            origin: req.headers.origin
-        });
-    }
-    next(err);
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-    console.error('❌ Global error:', err.message);
-    console.error('🔍 Error stack:', err.stack);
-
-    // Ensure CORS headers are set even on errors
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-    res.status(500).json({
-        error: 'Internal server error',
-        message: err.message
-    });
-});
-
 // 404 handler for undefined routes
 app.use('*', (req, res) => {
     console.log('404 route accessed:', req.originalUrl);
-
-    // Set CORS headers for 404 responses
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
     res.status(404).json({
         error: 'Route not found',
         message: `Cannot ${req.method} ${req.originalUrl}`,
