@@ -17,12 +17,23 @@ try {
 // Basic middleware
 app.use(express.json());
 
+// Handle preflight requests
+app.options('*', cors());
+
 // Add CORS for frontend access
 app.use(cors({
-    origin: '*', // In production, specify your frontend domain
+    origin: [
+        'https://libraryloan.davidharton.online',
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:8080'
+    ],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['X-Auth-Token']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['X-Auth-Token'],
+    preflightContinue: false,
+    optionsSuccessStatus: 200
 }));
 
 // Run migrations before starting the server
@@ -160,7 +171,21 @@ app.get('/test', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'production',
         port: process.env.PORT || 8080,
-        database: apiRoutes ? 'connected' : 'not connected (simplified version)'
+        database: apiRoutes ? 'connected' : 'not connected (simplified version)',
+        cors: {
+            origin: req.headers.origin,
+            allowed: true
+        }
+    });
+});
+
+// CORS test route
+app.get('/cors-test', (req, res) => {
+    console.log('CORS test route accessed from:', req.headers.origin);
+    res.json({
+        message: 'CORS test successful!',
+        origin: req.headers.origin,
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -431,6 +456,19 @@ app.post('/login', async (req, res) => {
             data: []
         });
     }
+});
+
+// CORS error handler
+app.use((err, req, res, next) => {
+    if (err.message === 'CORS') {
+        console.log('❌ CORS error:', req.originalUrl);
+        return res.status(403).json({
+            error: 'CORS error',
+            message: 'Origin not allowed',
+            origin: req.headers.origin
+        });
+    }
+    next(err);
 });
 
 // 404 handler for undefined routes
