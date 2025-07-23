@@ -25,13 +25,18 @@ module.exports = {
     production: {
         ...baseConfig,
         connection: process.env.DATABASE_URL,
-        // SSL is required for connecting to Supabase from a cloud environment like Vercel
+        // SSL is required for connecting to Neon from Vercel
         ssl: { rejectUnauthorized: false },
-        // The connection pool is managed by Supabase's PgBouncer, 
-        // so we use a minimal pool config on the client-side.
+        // Connection pool configuration for Neon
         pool: {
-            min: 2,
-            max: 10
+            min: 1,
+            max: 5,
+            acquireTimeoutMillis: 30000,
+            createTimeoutMillis: 30000,
+            destroyTimeoutMillis: 5000,
+            idleTimeoutMillis: 30000,
+            reapIntervalMillis: 1000,
+            createRetryIntervalMillis: 100
         }
     }
 };
