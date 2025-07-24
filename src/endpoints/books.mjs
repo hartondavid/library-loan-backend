@@ -34,7 +34,7 @@ router.post('/addBook', userAuthMiddleware, upload.fields([{ name: 'photo' }]), 
         }
 
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 1)
             .where('user_rights.user_id', userId)
@@ -44,11 +44,11 @@ router.post('/addBook', userAuthMiddleware, upload.fields([{ name: 'photo' }]), 
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const [id] = await db('books').insert({
+        const [id] = await (await db.knex())('books').insert({
             title, author, description, language, photo: filePathForImagePath, librarian_id: userId, quantity, publisher, number_of_pages
         });
 
-        const book = await db('books').where({ id }).first();
+        const book = await (await db.knex())('books').where({ id }).first();
         return sendJsonResponse(res, true, 201, "Book a fost adăugată cu succes!", { book });
     } catch (error) {
         return sendJsonResponse(res, false, 500, "Eroare la adăugarea cartii!", { details: error.message });
@@ -67,7 +67,7 @@ router.put('/updateBook/:bookId', userAuthMiddleware, upload.fields([{ name: 'ph
             return sendJsonResponse(res, false, 400, "Câmpurile title, author, description, language, quantity, publisher și number_of_pages sunt obligatorii!", []);
         }
 
-        const book = await db('books').where({ id: bookId }).first();
+        const book = await (await db.knex())('books').where({ id: bookId }).first();
 
         if (!book) return sendJsonResponse(res, false, 404, "Cartea nu există!", []);
 
@@ -89,7 +89,7 @@ router.put('/updateBook/:bookId', userAuthMiddleware, upload.fields([{ name: 'ph
             updateData.photo = photoUrl;
         }
 
-        const updated = await db('books').where({ id: bookId }).update(updateData);
+        const updated = await (await db.knex())('books').where({ id: bookId }).update(updateData);
 
         if (!updated) return sendJsonResponse(res, false, 404, "Cartea nu a fost actualizată!", []);
 
@@ -106,8 +106,8 @@ router.delete('/deleteBook/:bookId', userAuthMiddleware, async (req, res) => {
 
         const { bookId } = req.params;
 
-        const book = await db('books').where({ id: bookId }).first();
-        const loans = await db('loans').where({ book_id: bookId });
+        const book = await (await db.knex())('books').where({ id: bookId }).first();
+        const loans = await (await db.knex())('loans').where({ book_id: bookId });
 
         if (!book) return sendJsonResponse(res, false, 404, "Cartea nu există!", []);
         if (loans.length > 0) return sendJsonResponse(res, false, 400, "Cartea are împrumuturi!", []);
@@ -118,7 +118,7 @@ router.delete('/deleteBook/:bookId', userAuthMiddleware, async (req, res) => {
             await deleteFromBlob(book.photo);
         }
 
-        await db('books').where({ id: bookId }).del();
+        await (await db.knex())('books').where({ id: bookId }).del();
 
         return sendJsonResponse(res, true, 200, "Cartea a fost ștearsă cu succes!", []);
     } catch (error) {
@@ -130,7 +130,7 @@ router.delete('/deleteBook/:bookId', userAuthMiddleware, async (req, res) => {
 router.get('/getBook/:bookId', userAuthMiddleware, async (req, res) => {
     const { bookId } = req.params;
     try {
-        const book = await db('books')
+        const book = await (await db.knex())('books')
             .where('books.id', bookId)
             .select(
                 'books.id',
@@ -160,7 +160,7 @@ router.get('/getBook/:bookId', userAuthMiddleware, async (req, res) => {
 
 router.get('/getBooks', userAuthMiddleware, async (req, res) => {
     try {
-        const books = await db('books')
+        const books = await (await db.knex())('books')
             .join('users', 'books.librarian_id', 'users.id')
             .join('user_rights', 'users.id', 'user_rights.user_id')
             .where('user_rights.right_id', 2)

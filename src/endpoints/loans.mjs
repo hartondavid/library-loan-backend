@@ -24,7 +24,7 @@ router.post('/addLoan', userAuthMiddleware, async (req, res) => {
         }
 
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 2)
             .where('user_rights.user_id', userId)
@@ -60,16 +60,16 @@ router.post('/addLoan', userAuthMiddleware, async (req, res) => {
         }
 
         console.log('remainingQuantity', remainingQuantity);
-        await db('books')
+        await (await db.knex())('books')
             .where({ 'books.id': book_id })
             .update({ quantity: remainingQuantity })
 
 
-        const [id] = await db('loans').insert({
+        const [id] = await (await db.knex())('loans').insert({
             quantity, book_id, student_id: userId, librarian_id: userId,
             start_date: dateStartMySQL, end_date: dateEndMySQL
         });
-        const loan = await db('loans').where({ id }).first();
+        const loan = await (await db.knex())('loans').where({ id }).first();
         return sendJsonResponse(res, true, 201, "Împrumutul a fost adăugat cu succes!", { loan });
     } catch (error) {
         return sendJsonResponse(res, false, 500, "Eroare la adăugarea împrumutului!", { details: error.message });
@@ -88,7 +88,7 @@ router.put('/updateLoanStatus/:loanId', userAuthMiddleware, async (req, res) => 
             return sendJsonResponse(res, false, 400, "Câmpul status este obligatoriu!", []);
         }
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 1)
             .where('user_rights.user_id', userId)
@@ -98,22 +98,22 @@ router.put('/updateLoanStatus/:loanId', userAuthMiddleware, async (req, res) => 
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const loan = await db('loans')
+        const loan = await (await db.knex())('loans')
             .where({ id: loanId }).first();
 
         if (!loan) return sendJsonResponse(res, false, 404, "Împrumutul nu există!", []);
-        await db('loans').where({ id: loanId }).update({
+        await (await db.knex())('loans').where({ id: loanId }).update({
             status: status || loan.status,
         });
         if (status === 'returned') {
-            const book = await db('books').where({ id: loan.book_id }).first();
+            const book = await (await db.knex())('books').where({ id: loan.book_id }).first();
             const totalQuantity = book.quantity + loan.quantity;
-            await db('books').where({ id: loan.book_id }).update({ quantity: totalQuantity });
+            await (await db.knex())('books').where({ id: loan.book_id }).update({ quantity: totalQuantity });
 
         }
 
 
-        const updated = await db('loans').where({ id: loanId }).first();
+        const updated = await (await db.knex())('loans').where({ id: loanId }).first();
         return sendJsonResponse(res, true, 200, "Împrumutul a fost actualizat cu succes!", { loan: updated });
     } catch (error) {
         return sendJsonResponse(res, false, 500, "Eroare la actualizarea împrumutului!", { details: error.message });
@@ -127,7 +127,7 @@ router.delete('/deleteLoan/:loanId', userAuthMiddleware, async (req, res) => {
         const { loanId } = req.params;
         const userId = req.user?.id;
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 1)
             .where('user_rights.user_id', userId)
@@ -137,10 +137,10 @@ router.delete('/deleteLoan/:loanId', userAuthMiddleware, async (req, res) => {
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const loan = await db('loans')
+        const loan = await (await db.knex())('loans')
             .where({ id: loanId }).first();
         if (!loan) return sendJsonResponse(res, false, 404, "Împrumutul nu există!", []);
-        await db('loans').where({ id: loanId }).del();
+        await (await db.knex())('loans').where({ id: loanId }).del();
         return sendJsonResponse(res, true, 200, "Împrumutul a fost șters cu succes!", []);
     } catch (error) {
         return sendJsonResponse(res, false, 500, "Eroare la ștergerea împrumutului!", { details: error.message });
@@ -153,7 +153,7 @@ router.get('/getLoans', userAuthMiddleware, async (req, res) => {
 
         const userId = req.user?.id;
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 1)
             .orWhere('rights.right_code', 3)
@@ -164,7 +164,7 @@ router.get('/getLoans', userAuthMiddleware, async (req, res) => {
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const loans = await db('loans')
+        const loans = await (await db.knex())('loans')
             .join('books', 'loans.book_id', 'books.id')
             .join('users', 'loans.student_id', 'users.id')
             .whereNot('loans.status', 'returned')
@@ -196,7 +196,7 @@ router.get('/getLoansByStudentId', userAuthMiddleware, async (req, res) => {
 
         const userId = req.user?.id;
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 2)
             .where('user_rights.user_id', userId)
@@ -206,7 +206,7 @@ router.get('/getLoansByStudentId', userAuthMiddleware, async (req, res) => {
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const loans = await db('loans')
+        const loans = await (await db.knex())('loans')
             .join('books', 'loans.book_id', 'books.id')
             .join('users', 'loans.student_id', 'users.id')
             .where('loans.student_id', userId)
@@ -241,7 +241,7 @@ router.get('/getPastLoans', userAuthMiddleware, async (req, res) => {
 
         const userId = req.user?.id;
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 1)
             .orWhere('rights.right_code', 3)
@@ -252,7 +252,7 @@ router.get('/getPastLoans', userAuthMiddleware, async (req, res) => {
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const loans = await db('loans')
+        const loans = await (await db.knex())('loans')
             .join('books', 'loans.book_id', 'books.id')
             .join('users', 'loans.student_id', 'users.id')
             .select(
@@ -284,7 +284,7 @@ router.get('/getPastLoansByStudentId', userAuthMiddleware, async (req, res) => {
 
         const userId = req.user?.id;
 
-        const userRights = await db('user_rights')
+        const userRights = await (await db.knex())('user_rights')
             .join('rights', 'user_rights.right_id', 'rights.id')
             .where('rights.right_code', 2)
             .where('user_rights.user_id', userId)
@@ -294,7 +294,7 @@ router.get('/getPastLoansByStudentId', userAuthMiddleware, async (req, res) => {
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const loans = await db('loans')
+        const loans = await (await db.knex())('loans')
             .join('books', 'loans.book_id', 'books.id')
             .join('users', 'loans.student_id', 'users.id')
             .where('loans.student_id', userId)
@@ -322,8 +322,5 @@ router.get('/getPastLoansByStudentId', userAuthMiddleware, async (req, res) => {
         return sendJsonResponse(res, false, 500, 'Eroare la preluarea împrumuturilor!', { details: error.message });
     }
 });
-
-
-
 
 export default router; 
