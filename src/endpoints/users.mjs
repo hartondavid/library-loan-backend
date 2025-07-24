@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { userAuthMiddleware } from "../utils/middlewares/userAuthMiddleware.mjs";
-
 import { getAuthToken, md5Hash, sendJsonResponse } from "../utils/utilFunctions.mjs";
 import db from "../utils/database.mjs";
 
