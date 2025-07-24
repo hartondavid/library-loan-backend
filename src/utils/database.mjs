@@ -90,6 +90,8 @@ class DatabaseManager {
                 await this.connect();
             }
             console.log('📋 Running migrations...');
+            console.log('🔍 Knex instance:', typeof this.knex);
+            console.log('🔍 Knex migrate method:', typeof this.knex.migrate);
             await this.knex.migrate.latest();
             console.log('✅ Migrations completed successfully');
         } catch (error) {
@@ -106,6 +108,8 @@ class DatabaseManager {
                 await this.connect();
             }
             console.log('📦 Running seeds...');
+            console.log('🔍 Knex instance:', typeof this.knex);
+            console.log('🔍 Knex seed method:', typeof this.knex.seed);
             await this.knex.seed.run();
             console.log('✅ Seeds completed successfully');
         } catch (error) {

@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import databaseManager from '../database.mjs'; // Adjust the path as necessary
+import db from '../database.mjs'; // Adjust the path as necessary
 
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -24,8 +24,8 @@ export const userAuthMiddleware = async (req, res, next) => {
 
         // Fetch the user from the database based on the ID from the token
         console.log('🔍 Auth middleware - Fetching user from database...');
-        const knex = await databaseManager.getKnex();
-        const user = await knex('users').where({ id: userId }).first();
+
+        const user = await (await db.getKnex())('users').where({ id: userId }).first();
 
         if (!user) {
             console.log('❌ Auth middleware - User not found in database for ID:', userId);

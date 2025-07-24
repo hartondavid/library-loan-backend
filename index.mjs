@@ -158,12 +158,14 @@ try {
         console.log('⚠️ Continuing without database migrations');
     }
 
+    console.log('🔍 Importing API routes...');
     const { default: apiRoute } = await import('./src/routes/apiRoute.mjs');
     apiRoutes = apiRoute;
     console.log('✅ Database API routes loaded successfully');
 } catch (error) {
     console.log('⚠️ Database API routes not available, using simplified version');
     console.log('🔍 Error:', error.message);
+    console.log('🔍 Error stack:', error.stack);
 }
 
 // Use API routes if available, otherwise use simplified routes
