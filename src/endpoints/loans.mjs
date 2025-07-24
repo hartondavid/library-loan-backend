@@ -40,7 +40,7 @@ router.post('/addLoan', userAuthMiddleware, async (req, res) => {
         endDateObj.setDate(startDateObj.getDate() + 7);
         const dateEndMySQL = toMySQLDatetime(endDateObj.toISOString());
 
-        const books = await db('books')
+        const books = await (await db.getKnex())('books')
             .where({ 'books.id': book_id })
             .where('books.quantity', '>', 0)
             .first();
