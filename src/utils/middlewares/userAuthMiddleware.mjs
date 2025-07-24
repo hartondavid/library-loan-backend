@@ -24,8 +24,7 @@ export const userAuthMiddleware = async (req, res, next) => {
 
         // Fetch the user from the database based on the ID from the token
         console.log('🔍 Auth middleware - Fetching user from database...');
-        const dbInstance = await db();
-        const user = await dbInstance('users').where({ id: userId }).first();
+        const user = await (await db.knex())('users').where({ id: userId }).first();
 
         if (!user) {
             console.log('❌ Auth middleware - User not found in database for ID:', userId);
