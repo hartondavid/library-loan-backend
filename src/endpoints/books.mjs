@@ -161,10 +161,6 @@ router.get('/getBook/:bookId', userAuthMiddleware, async (req, res) => {
 router.get('/getBooks', userAuthMiddleware, async (req, res) => {
     try {
         const books = await (await db.getKnex())('books')
-            .join('users', 'books.librarian_id', 'users.id')
-            .join('user_rights', 'users.id', 'user_rights.user_id')
-            .where('user_rights.right_id', 2)
-            .where('users.id', req.user.id)
             .select(
                 'books.id',
                 'books.title',
