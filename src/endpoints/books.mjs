@@ -44,11 +44,11 @@ router.post('/addBook', userAuthMiddleware, upload.fields([{ name: 'photo' }]), 
             return sendJsonResponse(res, false, 403, "Nu sunteti autorizat!", []);
         }
 
-        const [id] = await (await db.getKnex())('books').insert({
+        const result = await (await db.getKnex())('books').insert({
             title, author, description, language, photo: filePathForImagePath, librarian_id: userId, quantity, publisher, number_of_pages
-        });
+        }).returning('*');
 
-        const book = await (await db.getKnex())('books').where({ id }).first();
+        const book = result[0];
         return sendJsonResponse(res, true, 201, "Book a fost adăugată cu succes!", { book });
     } catch (error) {
         return sendJsonResponse(res, false, 500, "Eroare la adăugarea cartii!", { details: error.message });

@@ -65,11 +65,11 @@ router.post('/addLoan', userAuthMiddleware, async (req, res) => {
             .update({ quantity: remainingQuantity })
 
 
-        const [id] = await (await db.getKnex())('loans').insert({
+        const result = await (await db.getKnex())('loans').insert({
             quantity, book_id, student_id: userId, librarian_id: userId,
             start_date: dateStartMySQL, end_date: dateEndMySQL
-        });
-        const loan = await (await db.getKnex())('loans').where({ id }).first();
+        }).returning('*');
+        const loan = result[0];
         return sendJsonResponse(res, true, 201, "Împrumutul a fost adăugat cu succes!", { loan });
     } catch (error) {
         return sendJsonResponse(res, false, 500, "Eroare la adăugarea împrumutului!", { details: error.message });
